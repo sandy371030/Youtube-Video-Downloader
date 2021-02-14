@@ -19,3 +19,7 @@ A Simple Terminal App to Download Youtube Videos and Playlist with subtitles usi
 
 ###### 4. RE:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Python has a built-in package called re, which can be used to work with Regular Expressions. A RegEx, or Regular Expression, is a sequence of characters that forms a search pattern. It can be used to check if a string contains the specified search pattern. (https://docs.python.org/3/library/re.html)
+
+***
+
+***Check me on:*** [LinkedIn](https://www.linkedin.com/in/its-me-shanmuga-raj/), [reddit](https://www.reddit.com/user/Shanmuga-raj), [Keybase](https://keybase.io/shanmugaraj).

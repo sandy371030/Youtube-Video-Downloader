@@ -1,12 +1,26 @@
-#!/usr/bin/env python3
-import re
-import pyfiglet
 from pytube import Playlist, YouTube
 from collections import defaultdict
 
+import kivy
+from kivy.app import App
+from kivy.lang import Builder
+from kivy.core.window import Window
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.properties import StringProperty, ListProperty
+
+
+def playlist(url):
+
+    pl=Playlist(url)
+    x = []
+    for l in pl.video_urls:
+        yt = YouTube(l)
+        x.append(yt.title)
+    return x,pl
+
 
 def get_video(yt):
-    # Fetch All Progressive Streams:
+
     streams = yt.streams.filter(progressive=True)
     streams_dict = defaultdict(list)
     j = 0
@@ -15,32 +29,20 @@ def get_video(yt):
         streams_dict[str(j)].append(stream.resolution)
         streams_dict[str(j)].append(stream.itag)
 
-    # Print The Available Video Resolution:
-    for iter, res in streams_dict.items(): print(iter+".", res[0])
+    resolution_list = []
+    for iter, res in streams_dict.items(): 
+        y = iter+". "+res[0]
+        resolution_list.append(y)
 
-    # Based On Selected Resolution Download Will Begin...
-    selected_resolution = str(input("SELECT ANY RESOLUTION FROM ABOVE LIST: "))
-    stream = yt.streams.get_by_itag(streams_dict[selected_resolution][1])
-    print("Downloading Please wait...")
-    stream.download()
-    print("Download Completed Successfully.")
+    return (streams_dict, resolution_list)
 
 
 def get_caption(yt):
-    # Get The Title Of The Video:
-    title = yt.title
 
-    # Remove All The Characters Other Than AlphaNumerical:
-    try:
-        title = re.sub("[^a-zA-Z0-9]+"," ", title) # Using RegExp.
-    except:
-        title = ''.join(i for i in title if i.isalnum() or i.isspace()) # Without using RegExp.
-
-    # Get All The Available Captions:
     captions = yt.captions
     caption_dict = defaultdict(list)
 
-    if not captions: print("No Captions Available.")
+    if not captions: return ["No Caption available"]
 
     else:
         i = 0
@@ -49,63 +51,120 @@ def get_caption(yt):
             caption_dict[str(i)].append(caption.name)
             caption_dict[str(i)].append(caption.code)
 
-        # Print All Available Captions:
-        for iter, lang in caption_dict.items(): print(iter+".",lang[0])
+        caption_list = []
+        for iter, lang in caption_dict.items():
+            x = iter+". "+lang[0]
+            caption_list.append(x)
 
-        # Based on Selected caption Download will begin...
-        selected_caption = str(input("SELECT ANY CAPTIONS FROM ABOVE LIST: "))
-        caption = yt.captions[caption_dict[selected_caption][1]]
-
-        # Create A New File With The Name of Title And Write Selected Caption Data Into This File.
-        file = open(title+".srt", "w", encoding="utf-8")
-        file.write(caption.generate_srt_captions())
-        file.close()
+    return (caption_dict, caption_list)
 
 
-def single(video_url):
-    yt = YouTube(video_url)
-    get_caption(yt)
-    get_video(yt)
+def download_caption(yt, selected_caption):
+
+    yt = YouTube(yt)
+    caption_dict = get_caption(yt)[0]
+    caption = yt.captions[caption_dict[selected_caption.split(".")[0]][1]]
+    title = ''.join(i for i in yt.title if i.isalnum() or i.isspace())
+    file = open(title+".srt", "w", encoding="utf-8")
+    file.write(caption.generate_srt_captions())
+    file.close()
 
 
-def playlist(playlist_url):
-    pl = Playlist(playlist_url)
-    for url in pl.video_urls:
-        single(url)
+def download_video(yt, selected_resolution):
+
+    yt = YouTube(yt)
+    streams_dict = get_video(yt)[0]
+    stream = yt.streams.get_by_itag(streams_dict[selected_resolution.split(".")[0]][1])
+    stream.download()
 
 
-def main():
+class Main(Screen):
+
+    def single(self, url):
+
+        try:
+            yt = YouTube(url)
+            self.manager.get_screen("b").title = yt.title
+            self.manager.get_screen("b").invi = url
+            self.manager.get_screen("b").img_link = yt.thumbnail_url
+            self.manager.get_screen("b").cap_list = get_caption(yt)[1]
+            self.manager.get_screen("b").res_list = get_video(yt)[1]
+
+        except:
+            self.manager.get_screen("b").title = "Invalid URL"
     
-    try:
-        # If Pyfiglet Module Is Installed Run This.
-        banner = pyfiglet.figlet_format("YOUTUBE \nDOWNLOADER")
-        print(banner)
-    except:
-        # Incase, If Pyfiglet Module Not Installed.
-        print("Welcome to Youtube Downloader!")
 
-    video_or_playlist = input("Do you want to download Single Video or Playlist?\n\t1. single Video \n\t2. Playlist\n")
+    def play(self , url):
+        
+        try:
+            lst ,url_list = playlist(url)
+            yt = YouTube(url_list[0])
+            self.manager.get_screen("c").title = yt.title
+            self.manager.get_screen("c").invi = url
+            self.manager.get_screen("c").img_link = yt.thumbnail_url
+            self.manager.get_screen("c").cap_list = get_caption(yt)[1]
+            self.manager.get_screen("c").res_list = get_video(yt)[1]
+            self.manager.get_screen("c").vdo_list = lst
+        
+        except:
+            self.manager.get_screen("c").title = "Invalid URL"
     
-    if video_or_playlist == "1":
-        video_url = input("Enter Video URL: ")
-        single(video_url)
-        # single("https://youtu.be/H2vN2QXZGnc")
 
-    elif video_or_playlist == "2": 
-        playlist_url = input("Enter Playlist URL: ")
-        playlist(playlist_url)
-        # playlist("https://youtube.com/playlist?list=PLsyeobzWxl7rXr9qxVZPbaoU7uUqP7iPM")
+
+
+class Single(Screen):
+
+    title = StringProperty('')
+    invi = StringProperty('')
+    img_link = StringProperty('')
+    cap_list = ListProperty([])
+    res_list = ListProperty([])
+
+
+    def download(self, yt_url, selected_resolution, selected_caption):
+        
+        download_caption(yt_url, selected_caption)
+        download_video(yt_url, selected_resolution)
+
+
+class Album(Screen):
+
+    title = StringProperty('')
+    invi = StringProperty('')
+    img_link = StringProperty('')
+    cap_list = ListProperty([])
+    res_list = ListProperty([])
+    vdo_list = ListProperty([])
     
-    else:
-        decision = input("You Selected an Invalid Option. Do You Want To \n1. Try Again \n\tor \n2.Exit:")
-        if decision == "1":
-            main()
-        elif decision == "2":
-            print("See You Later...")
-            exit()
-        else:
-            print("Invalid Option. Bye!")
-            exit()
+    def all(self,url):
+        p = Playlist(url)
+        for video in p.videos:
+            video.streams.first().download()
+        
+
+    def download(self, url, title, selected_resolution, selected_caption):
+
+        lst ,url_list = playlist(url)
+        idx = lst.index(title)
+        selected_vdo = url_list[idx]
+
+        download_caption(selected_vdo, selected_caption)
+        download_video(selected_vdo, selected_resolution)
+    
+     
+        
+class Winmanager(ScreenManager):
+    pass
 
 
-main()
+kv = Builder.load_file("main.kv")
+
+
+class YoutubeDownloaderApp(App):
+    def build(self):
+        return kv
+
+
+
+if __name__== "__main__" :
+    YoutubeDownloaderApp().run()  

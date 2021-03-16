@@ -1,0 +1,154 @@
+#:import Factory kivy.factory.Factory
+
+Winmanager:
+    Main:
+    Single:
+    Album:
+
+
+<Main>:
+
+    name:"a"
+    link:link
+
+    BoxLayout:
+        orientation: "vertical"
+        size:root.width,root.height
+
+        Label:
+            font_size:35
+            text: "Paste the URL here"
+
+        TextInput:
+            text: ""
+            id: link
+            multiline: False
+
+        GridLayout:
+            cols:2
+
+            Button:  
+                text:"Single"
+                font_size:25
+                on_press: root.single(root.link.text)
+                on_release:
+                    app.root.current = "b"
+                    root.manager.transition.direction = "left"
+            
+            Button:  
+                text:"Playlist"
+                font_size:25
+                on_press: root.play(root.link.text)
+                on_release: 
+                    app.root.current = "c"            
+                    root.manager.transition.direction = "left"
+
+
+<Single>:
+
+    name: "b"
+
+    BoxLayout:
+        orientation: "vertical"
+        size: root.width,root.height
+
+        Label:
+            id:video_title
+            text:root.title
+            font_size: 30
+            background_normal: ''
+
+            Label:
+                id: invisible
+                text: root.invi
+                font_size: 1
+
+        AsyncImage:
+            id: video_image
+            source: root.img_link
+
+        GridLayout:
+            cols:2
+
+            Spinner:
+                id:cap
+                text:"Captions"
+                values:root.cap_list
+ 
+            Spinner:
+                id:res
+                text: "Resolution"
+                values:root.res_list
+
+        BoxLayout:
+            orientation: "horizontal"
+    
+            Button:
+                text:"back"
+                on_press: 
+                    app.root.current = "a"
+                    root.manager.transition.direction = "right"
+            Button:
+                text:"Download"
+                on_press: root.download(invisible.text, res.text, cap.text)
+
+
+<Album>:
+
+    name: "c"
+
+    BoxLayout:
+        orientation: "vertical"
+        size: root.width,root.height
+
+        Label:
+            id:video_title
+            text:root.title
+            font_size: 30
+            background_normal: ''
+
+            Label:
+                id: invisible
+                text: root.invi
+                font_size: 1
+
+        AsyncImage:
+            id: video_image
+            source: root.img_link
+        
+        GridLayout:    
+            cols:2
+            Spinner:
+                id: video_list
+                text: "Video List"
+                values: root.vdo_list
+
+            Button:
+                text: " all"
+                on_press: root.all(invisible.text)
+
+
+        GridLayout: 
+            cols:2
+
+            Spinner:
+                id:cap
+                text:"Captions"
+                values:root.cap_list
+ 
+            Spinner:
+                id:res
+                text: "Resolution"
+                values:root.res_list
+
+        BoxLayout:
+            orientation: "horizontal"
+    
+            Button:
+                text:"back"
+                on_press: 
+                    app.root.current = "a"
+                    root.manager.transition.direction = "right"
+            Button:
+                text:"Download"
+                on_press: root.download(invisible.text, video_list.text, res.text, cap.text)
